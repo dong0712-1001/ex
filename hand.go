@@ -18,6 +18,14 @@ type Employee struct {
 }
 
 func main() {
+	filePath := "综合.xlsx"
+	if _, err := os.Stat(filePath); err == nil {
+		// 文件存在，删除文件
+		if err := os.Remove(filePath); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("已删除旧文件:%s", filePath)
+	}
 	var isQuoter bool
 	files, err := os.ReadDir(".")
 	if err != nil {
@@ -39,6 +47,7 @@ func main() {
 	}
 	newEmployees := sumAwards(allEmployees, isQuoter)
 	createNewFile(newEmployees, isQuoter)
+	log.Printf("已生成新文件:%s", filePath)
 
 }
 
@@ -56,6 +65,9 @@ func readExcelFile(filePath string) ([]Employee, bool, error) {
 			if len(row.Cells) < 5 { // 确保至少有5列数据
 				continue
 			} else if len(row.Cells) == 5 {
+				if row.Cells[1].String() == "" {
+					continue
+				}
 				isQuoter = false
 				award, _ := row.Cells[3].Int()
 				employee = Employee{
@@ -66,8 +78,14 @@ func readExcelFile(filePath string) ([]Employee, bool, error) {
 					Note:      row.Cells[4].String(),
 				}
 			} else {
+				if row.Cells[1].String() == "" {
+					continue
+				}
 				isQuoter = true
-				quoterAward, _ := row.Cells[3].Int()
+				quoterAward, err := row.Cells[3].Int()
+				if err != nil {
+					quoterAward = 0
+				}
 				award, _ := row.Cells[4].Int()
 				employee = Employee{
 					Apartment:   row.Cells[0].String(), //部门
